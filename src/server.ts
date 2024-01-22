@@ -1,15 +1,31 @@
 import { PrismaClient } from "@prisma/client";
 import fastify from "fastify";
 import { z } from 'zod';
+import cors from "@fastify/cors";
 
 const app = fastify();
-
+app.register(cors, {
+    origin: true,
+});
 const prisma = new PrismaClient();
 
 app.get('/users', async () => {
     const users = await prisma.user.findMany();
     
     return { users };
+})
+
+app.get('/users/:id', async (request, reply) => {
+    const paramsScheme = z.object({
+        id: z.string().cuid(),
+    })
+    const { id } = paramsScheme.parse(request.params);
+    const user = await prisma.user.findUniqueOrThrow({
+        where: {
+            id,
+        }
+    })
+    return user;
 })
 
 app.post('/users', async (request, reply) => {
