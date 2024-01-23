@@ -4,18 +4,19 @@ import { z } from 'zod';
 import cors from "@fastify/cors";
 
 const app = fastify();
+
 app.register(cors, {
     origin: true,
 });
 const prisma = new PrismaClient();
 
-app.get('/users', async () => {
+app.get('/users', async() => {
     const users = await prisma.user.findMany();
     
     return { users };
 })
 
-app.get('/users/:id', async (request, reply) => {
+app.get('/users/:id', async(request) => {
     const paramsScheme = z.object({
         id: z.string().cuid(),
     })
@@ -28,7 +29,7 @@ app.get('/users/:id', async (request, reply) => {
     return user;
 })
 
-app.post('/users', async (request, reply) => {
+app.post('/users', async(request, reply) => {
     const createUserSchema = z.object({
         name: z.string(),
         email: z.string().email()
@@ -44,6 +45,19 @@ app.post('/users', async (request, reply) => {
     })
 
     return reply.status(201).send()
+})
+
+app.delete('/users/:id', async(request, reply) => {
+    const paramsScheme = z.object({
+        id: z.string().cuid(),
+    })
+    const { id } = paramsScheme.parse(request.params)
+    await prisma.user.delete({
+        where: {
+            id
+        }
+    })
+    return reply.send({ message: 'user deleted' })
 })
 
 app.listen({
